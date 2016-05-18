@@ -3,6 +3,8 @@ import urllib2
 import json
 import csv
 import numpy
+import wget
+import os
 
 
 def getCollection ():
@@ -43,3 +45,17 @@ def downloadData ():
             f.close()
 
         count = count + 1
+
+def downloadCsvs (collection):
+    startDerectory = os.getcwd()
+    os.chdir(startDerectory+ '/CSVs')
+    for package in collection.find():
+        for resource in package['resources']:
+            if resource['format'] == 'CSV':
+                try:
+                    wget.download(resource['url'])
+                    print ''
+                except:
+                    pass
+
+    os.chdir(startDerectory)

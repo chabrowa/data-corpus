@@ -7,12 +7,12 @@ import wget
 import os
 
 
-def getCollection ():
+def getCollection (collectionName):
     from pymongo import MongoClient
     client = MongoClient()
 
     db = client['data-gov-uk-packages']
-    return db['packages']
+    return db[collectionName]
 
 def createDB (collection):
     for i in range(0, 103):
@@ -46,12 +46,34 @@ def downloadData ():
 
         count = count + 1
 
-def downloadCsvs (collection):
+def createHeadersCollection (collection, headers):
+    for package in collection.find():
+        newObject = {
+            "_id" : package['_id'],
+    	    "owner_org" : package['owner_org'],
+            "id" : package['id'],
+            "num_resources" : package['num_resources'],
+            "resources" : []
+        }
+        #db.products.insert( { _id: 10, item: "box", qty: 20 } )
+        for resource in package['resources']:
+            if resource['format'] == 'CSV':
+                newObject['resources'].append({
+                    "resource_group_id" : resource['resource_group_id'],
+                    "id" : resource['id'],
+                    "description": resource['description'],
+                    "format": resource['format'],
+                    "url": resource['url'],
+                })
+        headers.insert_one(newObject)
+
+def downloadCsvs (collection, headers):
     startDerectory = os.getcwd()
     os.chdir(startDerectory+ '/CSVs')
     for package in collection.find():
         for resource in package['resources']:
             if resource['format'] == 'CSV':
+
                 try:
                     wget.download(resource['url'])
                     print ''
@@ -59,3 +81,8 @@ def downloadCsvs (collection):
                     pass
 
     os.chdir(startDerectory)
+
+def validateCsv ():
+    f=os.popen("ls -l")
+    for i in f.readlines():
+        print "myresult:",i,
